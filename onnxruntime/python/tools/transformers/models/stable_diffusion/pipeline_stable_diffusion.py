@@ -37,6 +37,7 @@ from engine_builder_ort_cuda import OrtCudaEngineBuilder
 from engine_builder_ort_trt import OrtTensorrtEngineBuilder
 from engine_builder_tensorrt import TensorrtEngineBuilder
 from engine_builder_torch import TorchEngineBuilder
+from engine_builder_ort_nvtensorrtrtx import OrtNvTensorrtrtxEngineBuilder
 from PIL import Image
 
 
@@ -120,6 +121,8 @@ class StableDiffusionPipeline:
             self.backend = TensorrtEngineBuilder(pipeline_info, max_batch_size, device, use_cuda_graph)
         elif engine_type == EngineType.ORT_TRT:
             self.backend = OrtTensorrtEngineBuilder(pipeline_info, max_batch_size, device, use_cuda_graph)
+        elif engine_type == EngineType.ORT_NVTENSORRTRTX:
+            self.backend = OrtNvTensorrtrtxEngineBuilder(pipeline_info, max_batch_size, device, use_cuda_graph)
         elif engine_type == EngineType.ORT_CUDA:
             self.backend = OrtCudaEngineBuilder(pipeline_info, max_batch_size, device, use_cuda_graph)
         elif engine_type == EngineType.TORCH:
