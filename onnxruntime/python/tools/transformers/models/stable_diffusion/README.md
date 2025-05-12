@@ -82,7 +82,7 @@ python3 demo_txt2img_xl.py --help
 ```
 
 For example:
-`--engine {ORT_CUDA,ORT_TRT,TRT}` can be used to choose different backend engines including CUDA or TensorRT execution provider of ONNX Runtime, or TensorRT.
+`--engine {ORT_CUDA,ORT_TRT,TRT, ORT_NVTENSORRTRTX}` can be used to choose different backend engines including CUDA or TensorRT execution provider of ONNX Runtime, or TensorRT.
 `--work-dir WORK_DIR` can be used to load or save models under the given directory. You can download the [optimized ONNX models of Stable Diffusion XL 1.0](https://huggingface.co/tlwu/stable-diffusion-xl-1.0-onnxruntime#usage-example) to save time in running the XL demo.
 
 #### Generate an image guided by a text prompt
@@ -148,6 +148,7 @@ First, we need install CUDA 12.x, [cuDNN](https://docs.nvidia.com/deeplearning/c
 The verison of CuDNN can be found in https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements.
 The version of TensorRT can be found in https://onnxruntime.ai/docs/execution-providers/TensorRT-ExecutionProvider.html#requirements.
 
+For NV TensorRT RTX EP it is recommended that we use the TRT-JIT enabled TensorRT package.
 #### CUDA 12.*:
 The official package of onnxruntime-gpu 1.19.x is built for CUDA 12.x. You can install it and other python packages like the following:
 ```
@@ -155,6 +156,10 @@ pip install onnxruntime-gpu
 pip install torch --index-url https://download.pytorch.org/whl/cu124
 pip install --upgrade polygraphy onnx-graphsurgeon --extra-index-url https://pypi.ngc.nvidia.com
 pip install -r requirements/cuda12/requirements.txt
+```
+It is recommended that we use proper torch with cuda support for the latest blackwell GPU. You can use the nightly build for it.
+```
+pip install --pre torch torchaudio torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
 ```
 Finally, `pip install tensorrt` for Linux. For Windows, pip install the tensorrt wheel in the downloaded TensorRT zip file instead.
 
@@ -235,6 +240,10 @@ Option `--bfloat16` enables the later. If an operator does not support bfloat16,
 
 For SDXL model, it is recommended to use a machine with 48 GB or more memory to optimize.
 
+For the new NV TensorRT RTX EP it is recommended to skip the optimizations provided in the script. Use the following command in that case
+```
+python optimize_pipeline.py  -i ./sdxl_onnx/fp32  -o ./sdxl_onnx/fp16 --float16  --disable_attention  --disable_skip_layer_norm  --disable_layer_norm  --disable_bias_skip_layer_norm  --disable_bias_gelu  --disable_gelu  --disable_embed_layer_norm  --disable_group_norm --disable_nhwc_conv 
+```
 ### Run Benchmark
 
 #### Run Benchmark with Optimum
