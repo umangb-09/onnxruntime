@@ -15,6 +15,7 @@ class EngineType(Enum):
     ORT_TRT = 1  # ONNX Runtime TensorRT Execution Provider
     TRT = 2  # TensorRT
     TORCH = 3  # PyTorch
+    ORT_NVTENSORRTRTX = 4  # ONNX Runtime NV Tensorrt RTX Execution Provider
 
 
 def get_engine_type(name: str) -> EngineType:
@@ -23,6 +24,7 @@ def get_engine_type(name: str) -> EngineType:
         "ORT_TRT": EngineType.ORT_TRT,
         "TRT": EngineType.TRT,
         "TORCH": EngineType.TORCH,
+        "ORT_NVTENSORRTRTX": EngineType.ORT_NVTENSORRTRTX,
     }
     return name_to_type[name]
 
@@ -135,6 +137,7 @@ class EngineBuilder:
         return onnx_model_dir
 
     def get_onnx_path(self, model_name, onnx_dir, opt=True, suffix=""):
+        #model_name = self.get_diffusers_module_name(model_name)
         onnx_model_dir = self.get_model_dir(model_name, onnx_dir, opt=opt, suffix=suffix)
         return os.path.join(onnx_model_dir, "model.onnx")
 
@@ -176,7 +179,7 @@ class EngineBuilder:
     def load_models(self, framework_model_dir: str):
         # For TRT or ORT_TRT, we will export fp16 torch model for UNet and VAE
         # For ORT_CUDA, we export fp32 model first, then optimize to fp16.
-        export_fp16 = self.engine_type in [EngineType.ORT_TRT, EngineType.TRT]
+        export_fp16 = self.engine_type in [EngineType.ORT_TRT, EngineType.TRT, EngineType.ORT_NVTENSORRTRTX]
 
         if "clip" in self.stages:
             self.models["clip"] = CLIP(

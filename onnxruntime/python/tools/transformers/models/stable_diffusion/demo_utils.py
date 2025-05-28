@@ -68,7 +68,7 @@ def set_default_arguments(args):
 
 
 def parse_arguments(is_xl: bool, parser):
-    engines = ["ORT_CUDA", "ORT_TRT", "TRT", "TORCH"]
+    engines = ["ORT_CUDA", "ORT_TRT", "TRT", "TORCH", "ORT_NVTENSORRTRTX"]
 
     parser.add_argument(
         "-e",
@@ -501,6 +501,21 @@ def initialize_pipeline(
         )
     elif engine_type == EngineType.TORCH:
         pipeline.backend.build_engines(framework_model_dir)
+    elif engine_type == EngineType.ORT_NVTENSORRTRTX:
+        pipeline.backend.build_engines(
+            engine_dir,
+            framework_model_dir,
+            onnx_dir,
+            onnx_opset,
+            opt_image_height=opt_image_height,
+            opt_image_width=opt_image_width,
+            opt_batch_size=opt_batch_size,
+            static_batch=not build_dynamic_batch,
+            static_image_shape=not build_dynamic_shape,
+            max_workspace_size=0,
+            device_id=torch.cuda.current_device(),
+            timing_cache=timing_cache,
+        )
     else:
         raise RuntimeError("invalid engine type")
 
