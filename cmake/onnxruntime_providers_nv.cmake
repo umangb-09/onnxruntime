@@ -133,52 +133,6 @@ endif ()
   # Therefore, the above code finds ${TENSORRT_LIBRARY_INFER}
   set(trt_link_libs ${CMAKE_DL_LIBS} ${TENSORRT_LIBRARY})
 
-  # Find NVML library for driver version checking
-  # NVML is typically in the CUDA toolkit directory
-  if (WIN32)
-    # Try multiple possible locations and names
-    # CUDAToolkit_ROOT is set from onnxruntime_CUDA_HOME (--cuda_home parameter)
-    # CUDAToolkit_ROOT_DIR is set by find_package(CUDAToolkit)
-    find_library(NVML_LIBRARY
-      NAMES nvml nvidia-ml
-      HINTS 
-        ${CUDAToolkit_ROOT_DIR}
-        ${CUDAToolkit_ROOT}
-        ${onnxruntime_CUDA_HOME}
-        "$ENV{CUDA_PATH}"
-      PATH_SUFFIXES 
-        lib/x64 
-        lib64 
-        lib
-        lib/x64/stubs
-      NO_DEFAULT_PATH
-    )
-    if (NOT NVML_LIBRARY)
-      find_library(NVML_LIBRARY NAMES nvml nvidia-ml)
-    endif()
-  else()
-    # Linux: NVML is typically libnvidia-ml.so (part of NVIDIA driver)
-    find_library(NVML_LIBRARY
-      NAMES nvidia-ml
-      PATHS
-        /usr/lib
-        /usr/lib64
-        /usr/local/lib
-        /usr/local/lib64
-        ${CUDAToolkit_ROOT_DIR}/lib64
-        ${CUDAToolkit_ROOT_DIR}/lib
-        ${onnxruntime_CUDA_HOME}/lib64
-        ${onnxruntime_CUDA_HOME}/lib
-      NO_DEFAULT_PATH
-    )
-    if (NOT NVML_LIBRARY)
-      find_library(NVML_LIBRARY NAMES nvidia-ml)
-    endif()
-  endif()
-
-  if (NVML_LIBRARY)
-    message(STATUS "Found NVML library: ${NVML_LIBRARY}")
-  endif()
   file(GLOB_RECURSE onnxruntime_providers_nv_tensorrt_rtx_cc_srcs CONFIGURE_DEPENDS
     "${ONNXRUNTIME_ROOT}/core/providers/nv_tensorrt_rtx/*.h"
     "${ONNXRUNTIME_ROOT}/core/providers/nv_tensorrt_rtx/*.cc"
@@ -196,19 +150,9 @@ endif ()
   target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE Eigen3::Eigen  onnx flatbuffers::flatbuffers Boost::mp11 safeint_interface Eigen3::Eigen)
   add_dependencies(onnxruntime_providers_nv_tensorrt_rtx onnxruntime_providers_shared ${onnxruntime_EXTERNAL_DEPENDENCIES})
   if (onnxruntime_USE_TENSORRT_BUILTIN_PARSER)
-    target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${trt_link_libs} ${ONNXRUNTIME_PROVIDERS_SHARED} ${PROTOBUF_LIB} flatbuffers::flatbuffers Boost::mp11 safeint_interface ${ABSEIL_LIBS} PUBLIC CUDA::cudart CUDA::cuda_driver)
+    target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${trt_link_libs} ${ONNXRUNTIME_PROVIDERS_SHARED} ${PROTOBUF_LIB} flatbuffers::flatbuffers Boost::mp11 safeint_interface ${ABSEIL_LIBS} PUBLIC CUDA::cudart CUDA::cuda_driver CUDA::nvml)
   else()
-    target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${onnxparser_link_libs} ${trt_link_libs} ${ONNXRUNTIME_PROVIDERS_SHARED} ${PROTOBUF_LIB} flatbuffers::flatbuffers ${ABSEIL_LIBS} PUBLIC CUDA::cudart CUDA::cuda_driver)
-  endif()
-  
-  # Link NVML library (required for driver version checking)
-  if (NVML_LIBRARY)
-    target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${NVML_LIBRARY})
-  else()
-    message(FATAL_ERROR "NVML library is required but was not found. "
-                        "Expected location: ${CUDAToolkit_ROOT_DIR}/lib/x64/nvml.lib or "
-                        "${CUDAToolkit_ROOT}/lib/x64/nvml.lib or "
-                        "${onnxruntime_CUDA_HOME}/lib/x64/nvml.lib")
+    target_link_libraries(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${onnxparser_link_libs} ${trt_link_libs} ${ONNXRUNTIME_PROVIDERS_SHARED} ${PROTOBUF_LIB} flatbuffers::flatbuffers ${ABSEIL_LIBS} PUBLIC CUDA::cudart CUDA::cuda_driver CUDA::nvml)
   endif()
   target_include_directories(onnxruntime_providers_nv_tensorrt_rtx PRIVATE ${ONNXRUNTIME_ROOT} ${CMAKE_CURRENT_BINARY_DIR} ${TENSORRT_RTX_INCLUDE_DIR} ${onnx_tensorrt_SOURCE_DIR}
     PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
