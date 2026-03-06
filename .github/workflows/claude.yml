@@ -35,11 +35,12 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
             actions: read
 
-          # Pre-approve tools so Claude can commit and push changes without manual approval
-          allowed_tools: "Bash,Edit,Read,Write,Glob,Grep"
+          # Pre-approve tools so Claude can commit and push without manual approval prompt
+          claude_args: "--allowedTools Bash,Edit,Read,Write,Glob,Grep"
 
