@@ -1173,9 +1173,8 @@ struct NvTensorRtRtxEpFactory : OrtEpFactory {
     // Parse both versions (both should be in standard format from NVML)
     if (!parseVersion(driver_version_str, driver_major, driver_minor) ||
         !parseVersion(min_version_str, min_major, min_minor)) {
-      // If parsing fails, do string comparison as fallback
-      // This handles edge cases but shouldn't normally happen
-      return driver_version_str >= min_version_str;
+      // If parsing fails, conservatively treat as incompatible (fail safe)
+      return false;
     }
     
     // Compare versions numerically
@@ -1232,11 +1231,20 @@ struct NvTensorRtRtxEpFactory : OrtEpFactory {
     int compute_capability_major = 0;
     int compute_capability_minor = 0;
     if (!factory->IsOrtHardwareDeviceSupported(*hw, &compute_capability_major, &compute_capability_minor)) {
+      uint32_t reasons = OrtDeviceEpIncompatibility_DEVICE_INCOMPATIBLE;
+      // If both are still 0, the CUDA device lookup failed (device not matched by LUID/PCI bus ID)
+      if (compute_capability_major == 0 && compute_capability_minor == 0) {
+        return factory->ep_api.DeviceEpIncompatibilityDetails_SetDetails(
+            details,
+            reasons,
+            0,  // error_code
+            "NvTensorRTRTX EP could not determine the compute capability of this NVIDIA GPU. "
+            "Ensure the CUDA runtime is installed and the device is accessible.");
+      }
       // Device architecture not supported - compute capability too low
       std::string cc_string = std::to_string(compute_capability_major) + "." + std::to_string(compute_capability_minor);
-      uint32_t reasons = OrtDeviceEpIncompatibility_DEVICE_INCOMPATIBLE;
-      std::string msg = "NvTensorRTRTX EP does not support GPU with Compute Capability " + cc_string + 
-                        ". Supported compute capabilities: 8.6, 8.9, or 12.0+.";
+      std::string msg = "NvTensorRTRTX EP does not support GPU with Compute Capability " + cc_string +
+                        ". Requires Ampere (8.0+) or newer GPU architecture.";
       return factory->ep_api.DeviceEpIncompatibilityDetails_SetDetails(
           details,
           reasons,
